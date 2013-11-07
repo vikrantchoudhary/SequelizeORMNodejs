@@ -11,9 +11,15 @@ var db = new Sequelize(config.development.database, config.development.username,
   host: config.development.host,
   port: config.development.port,
   dialect: 'postgres',
-  logging: false
+  logging: false,
+  maxConcurrentQueries:100
 });
 
+db.map = function () {
+    var obj = new Object(),
+        ctx = this;
+      ctx.att
+}
 module.exports.db = db;
 
 //load models

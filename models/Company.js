@@ -3,22 +3,10 @@
 
 var Sequelize = require('sequelize-postgres').sequelize;
 var sequelize = require('./../config/dbManager').db;
-/*var company = sequelize.define('company', {
-	    id:Sequelize.INTEGER,
-        name:Sequelize.TEXT,
-        age:Sequelize.INTEGER,
-        address:Sequelize.TEXT,
-        salary:Sequelize.INTEGER
-    }*/
-    /*{
-    instanceMethods: {
-        sync1: function() {
-            console.log("trying to sync");
-        //return this.__factory.associations['company'].target.count({ where: { id: this.id } });
-        }
-       }
-    }*/
-//);
+var util = require('util');
+var events = require('events');
+var emitter = module.exports.emitter = new events.EventEmitter();
+
 var company = sequelize.define('company', {
     id: {
         type: Sequelize.INTEGER,
@@ -46,133 +34,79 @@ var company = sequelize.define('company', {
         defaultValue: null
     }
 },
-
-
 {
     freezeTableName:true
 }
 );
 
- /*{
-     timestamps: false,
-     underscored: true
- },
-{
-	 classMethods: {
-		    setImportance: function(newName, callback) {
-		      company.findAll().on('success', function(allCompanies) {
-		        var chainer = new Sequelize.Utils.QueryChainer
-		        allCompanies.forEach(function(company) {
-		          chainer.add(company.updateAttributes({ name: newName }))
-		        })
-		        chainer.run().on('success', function() {
-		          callback && callback()
-		        })
-		      })
-		    }
-		  }
-	 },
-  {
-	    instanceMethods: {
-	      countCompanies: function() {
-	    	  return this.__factory.associations['company'].target.count({ where: { id: this.id } });
-	      }
-	    }
-  }*/
- 
 
-
-/*module.exports.getById = function(id) {
-    company.find({ where: { id: id } }).success(function(company) {
-        if (!company) {
-            console.log('company' + id + ' does not exist');
-        } else {
-            return this.__factory.associations['company'].target({ where: { id: this.id } });
-            //console.log("able to handle");
-        }
-    });
-}*/
-module.exports.getById = function(id,callback) {
+exports.getById = function (id, callback) {
     company.find({ where: { id: id } }).success(function(company) {
         if (!company) {
             callback('company ' + id + ' does not exist');
-            //console.log('company ' + id + ' does not exist');
-        } else {
-            /*callback(null, {
-                id: company.id, name: company.name, age: company.age, address: company.address , salary:company.salary
-            });*/
-            //company.find(company.id);
-            //console.log("able to reach to the place" + company.id + company.name);
-            //console.log("json form" + JSON.stringify(company));
-            callback(null,JSON.toString(company));
+        }
+        else {
+            callback(company);
         }
     });
 }
 
-module.exports.getALLData = function () {
-    company.findAll().success(function() {
-       console.log("data = " );
+exports.getALLData = function (callback) {
+    company.findAll()
+        .success(function(company) {
+            console.log("success");
+            callback(company);
+        })
+        .failure(function (error) {
+            console.log("failure");
+            callback(error);
+        })
+};
 
-    });
+exports.updateData = function(companyData, callback) {
+    //console.log(companyData);
+    company.find({ where: { id: companyData.id } }).success(function(company) {
+        if (!company) {
+            callback(new Error("No note found for key " + companyData.id));
+        } else {
+            company.updateAttributes({
+                id:companyData.id,
+                name: companyData.name,
+                age: companyData.age,
+                salary: companyData.salary
+            }).success(function() {
+                    //debugger;
+                    console.log("... "  + company  + " ... " + companyData);
+                    callback(company);
+                }).error(function(err) {
+                    callback(err);
+                });
+        }
+    }).error(function(err) {
+            callback(err);
+        });
 
 }
 
-company.sync().success(function() {
-    //callback();
-    console.log("syncing is sucessful");
-}).error(function(err) {
-        console.log("not sucessfull");
-        //callback(err);
-});
-/*function sync() {
-    console.log("trying to sync..");
-}*/
-module.exports.Company = company;
-
-/*var company = sequelize.define('companies', {
-    id: {
-        type: Sequelize.INTEGER,
-        allowNull: true,
-        defaultValue: null
-    },
-    name: {
-        type: Sequelize.TEXT,
-        allowNull: true,
-        defaultValue: null
-    },
-    age: {
-        type: Sequelize.INTEGER,
-        allowNull: true,
-        defaultValue: null
-    },
-    address: {
-        type: Sequelize.TEXT,
-        allowNull: true,
-        defaultValue: null
-    },
-    salary: {
-        type: Sequelize.INTEGER,
-        allowNull: true,
-        defaultValue: null
-    },
-    createdAt: {
-        type: Sequelize.DATE,
-        allowNull: false,
-        defaultValue: null
-    },
-    updatedAt: {
-        type: Sequelize.DATE,
-        allowNull: false,
-        defaultValue: null
-    }
-});
-company.sync().success(function() {
-    //callback();
-    console.log("syncing is sucessful");
-}).error(function(err) {
-        console.log("not sucessfull");
-        //callback(err);
+exports.createData = function(companyData, callback) {
+    console.log(companyData);
+    company.create(companyData).success(function(company) {
+        callback(companyData);
+    }).error(function (err) {
+        callback(err);
     });
-module.exports.Company = company; */
+    //company.sync({force:true});
+}
 
+/*
+exports.sync = function () {
+    company.sync().success(function() {
+        console.log("syncing is sucessful");
+    }).error(function(err) {
+            console.log("not sucessfull");
+    });
+};
+*/
+
+module.exports.Company = company;
 
